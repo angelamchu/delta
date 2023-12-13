@@ -165,10 +165,41 @@ class DeltaInputFormat(realInput: ParquetInputFormat[ArrayWritable])
       fileToPartition.getOrElse(file.toUri, Array.empty))
   }
 
+  // There is a bug in the original HiveInputFormat class and its associated classes that will
+  // take even a tiny kb Parquet file and split it into 8 splits, each split then being
+  // assigned to a mapper.  This creates what a customer appropriately described as
+  // a "mapper explosion", causing a very large amount of infrastructure to be used to execute
+  // a query on Delta tables.  Today new classes are in use by native formats such as Parquet and
+  // ORC, and the new classes do not have the excessive mapper problem.
+  // The bug has nothing to do with this connector, it was a bug
+  // present in the original set of Hive classes that this connector is based off of.
+  // The new classes are very different then the old, and an extensive rewrite would be required
+  // to make this connector use those new classes.
+  // The below makes the old Hive classes stop creating a ton of splits for no reason.
+  // Hard-coding numSplits to 1 here will force it to default the split size to the system's default
+  // block size.  If a file is smaller than one block then only one split will be created
+  // for it.  Unlike the new CombineFileInputFormat class, FileInputFormat will not combine
+  // files in the same split, only split up individual files.  So this connector will create
+  // a few more splits than the new Hive classes do, since the new classes will combine multiple
+  // files into the same split.
   override def getSplits(job: JobConf, numSplits: Int): Array[InputSplit] = {
-    val splits = super.getSplits(job, numSplits)
+    val splits = super.getSplits(job, 1)
     // Reset the temp [[Map]] to release the memory
     fileToPartition = Map.empty
     splits
   }
+
+
+  // In my testing, the newer Hive classes seem to aim for a split size of around 256mb.
+  // The old Hive classes will use the default block size on the Hive system, which
+  // is usually 64mb or 128mb.  That will still create too many splits vs. querying native
+  // ORC or Parquet, so here we're overriding computeSplitSize to force the split size to be 256mb.
+  // To optimize your Delta table for number of mappers when querying with this connector,
+  // set the file size target on your Delta tables to 256mb or larger.
+  override protected def computeSplitSize(goalSize: Long, minSize: Long, blockSize: Long): Long = {
+    val splitSize = super.computeSplitSize(goalSize, minSize, 268435456)
+    splitSize
+  }
+
+
 }

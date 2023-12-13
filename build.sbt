@@ -35,7 +35,8 @@ val default_scala_version = settingKey[String]("Default Scala version")
 Global / default_scala_version := scala212
 
 // Dependent library versions
-val sparkVersion = "3.5.0"
+val sparkVersion = "2.4.3"
+// val sparkVersion = "3.5.0"
 val flinkVersion = "1.16.1"
 val hadoopVersion = "3.3.1"
 val scalaTestVersion = "3.2.15"
@@ -49,8 +50,16 @@ val tezVersion = "0.9.2"
 
 // Versions for Hive 2
 val hadoopVersionForHive2 = "2.7.2"
-val hive2Version = "2.3.3"
+val hive2Version = "2.3.7"
 val tezVersionForHive2 = "0.8.4"
+
+// Added this back in to allow compile with Scala 2.11
+// scalastyle:off
+def scalacWarningUnusedImport(version: String) = version match {
+  case v if v.startsWith("2.13.") => "-Ywarn-unused:imports"
+  case _ => "-Ywarn-unused-import"
+}
+// scalastyle:on
 
 scalaVersion := default_scala_version.value
 
@@ -67,7 +76,8 @@ lazy val commonSettings = Seq(
   scalaVersion := default_scala_version.value,
   crossScalaVersions := all_scala_versions,
   fork := true,
-  scalacOptions ++= Seq(s"-target:jvm-${targetJvm.value}", "-Ywarn-unused:imports"),
+  // scalacOptions ++= Seq(s"-target:jvm-${targetJvm.value}", "-Ywarn-unused:imports"),
+  scalacOptions ++= Seq(s"-target:jvm-${targetJvm.value}", scalacWarningUnusedImport(scalaVersion.value)),
   javacOptions ++= Seq("-source", targetJvm.value),
   // -target cannot be passed as a parameter to javadoc. See https://github.com/sbt/sbt/issues/355
   Compile / compile / javacOptions ++= Seq("-target", targetJvm.value),
@@ -107,7 +117,8 @@ lazy val spark = (project in file("spark"))
 
       // Test deps
       "org.scalatest" %% "scalatest" % scalaTestVersion % "test",
-      "org.scalatestplus" %% "scalacheck-1-15" % "3.2.9.0" % "test",
+      // "org.scalatestplus" %% "scalacheck-1-15" % "3.2.9.0" % "test",
+      "org.scalatestplus" %% "scalacheck-1-15" % "3.2.3.0" % "test",
       "junit" % "junit" % "4.12" % "test",
       "com.novocode" % "junit-interface" % "0.11" % "test",
       "org.apache.spark" %% "spark-catalyst" % sparkVersion % "test" classifier "tests",

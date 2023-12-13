@@ -19,7 +19,7 @@ package io.delta.hive
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapred.JobConf
 
-class HiveInputFormat extends org.apache.hadoop.hive.ql.io.HiveInputFormat {
+class HiveInputFormat extends org.apache.hadoop.hive.ql.io.CombineHiveInputFormat {
 
   override def pushProjectionsAndFilters(
       jobConf: JobConf,
