@@ -20,7 +20,7 @@ hive/target/scala-2.12/delta-hive-assembly_2.12-x.y.z.jar
 
 This uber JAR includes the Hive connector and all its dependencies. They need to be put in Hive’s classpath.
 
-Note: if you would like to build using Scala 2.11, you can run the SBT command `build/sbt "++ 2.11.12 hiveAssembly/assembly"` to generate the following JAR:
+Note: if you would like to build using Scala 2.11, you can run the SBT command `build/sbt "++ 2.11.12! hiveAssembly/assembly"` to generate the following JAR:
 
 ```
 hive/target/scala-2.11/delta-hive-assembly_2.11-x.y.z.jar
